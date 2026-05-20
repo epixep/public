@@ -1,0 +1,1450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nip lamination — kinematics + kinetics (v2)</title>
+<style>
+  :root {
+    --paper: #f1ead9;
+    --paper-2: #ebe3cf;
+    --card: #fbf7ec;
+    --ink: #1c1612;
+    --ink-2: #4a3f33;
+    --ink-3: #807260;
+    --rule: #c7b896;
+    --accent: #a8421f;
+    --accent-soft: #c97a4d;
+    --hi: #3d5a35;
+    --med: #a07a14;
+    --med-soft: #d9bf6f;
+    --shadow: 0 1px 0 rgba(28,22,18,0.04), 0 8px 24px -16px rgba(28,22,18,0.18);
+  }
+
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(168,66,31,0.04) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(61,90,53,0.05) 0%, transparent 50%);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", "Palatino", "Book Antiqua", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .mono {
+    font-family: "SF Mono", "JetBrains Mono", "IBM Plex Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  header {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 48px 32px 24px 32px;
+    border-bottom: 1px solid var(--rule);
+  }
+  header .eyebrow {
+    font-family: "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px 0;
+    font-style: italic;
+  }
+  header h1 .accent { color: var(--accent); font-style: normal; }
+  header .tag {
+    color: var(--ink-2);
+    max-width: 64ch;
+    margin: 0;
+  }
+  header .caveat {
+    margin-top: 18px;
+    padding: 10px 14px;
+    background: var(--card);
+    border-left: 3px solid var(--accent);
+    font-size: 13px;
+    color: var(--ink-2);
+    max-width: 80ch;
+  }
+
+  main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 12px 32px 64px 32px;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 18px 18px 14px 18px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ink-2);
+    margin: 0 0 14px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px dotted var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .card h2 .units-key {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Palatino", Georgia, serif;
+    font-size: 11px;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .card h2 .units-key .ks {
+    font-family: "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    font-style: normal;
+    color: var(--ink-2);
+    margin: 0 2px 0 8px;
+  }
+  .card h2 .units-key .ks:first-child { margin-left: 0; }
+
+  /* Input rows */
+  .ctrl {
+    display: grid;
+    grid-template-columns: 1fr 60px;
+    column-gap: 10px;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .ctrl label {
+    grid-column: 1 / 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .ctrl label .sym { font-style: italic; }
+  .ctrl label .units { color: var(--ink-3); font-size: 12px; }
+  .ctrl input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--paper-2);
+    border-radius: 2px;
+    outline: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ctrl input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border: 2px solid var(--card);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .ctrl input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border: 2px solid var(--card);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .ctrl input[type="number"] {
+    font-family: "SF Mono", "IBM Plex Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    width: 100%;
+    padding: 2px 6px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink);
+    text-align: right;
+  }
+  .ctrl input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .reset-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .action-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: var(--shadow);
+  }
+  .action-bar button.reset {
+    flex: 1;
+    font-size: 12px;
+  }
+  button.reset {
+    font-family: inherit;
+    font-style: italic;
+    font-size: 13px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink-2);
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  button.reset:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Output rows */
+  .out-table {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    column-gap: 14px;
+    row-gap: 6px;
+    align-items: baseline;
+  }
+  .out-row {
+    display: contents;
+  }
+  .out-row > .name {
+    color: var(--ink);
+    font-size: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .out-row > .name .sym { font-style: italic; color: var(--ink-2); }
+  .out-row > .value {
+    font-family: "SF Mono", "IBM Plex Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    text-align: right;
+    color: var(--ink);
+    min-width: 80px;
+  }
+  .out-row > .units {
+    font-size: 12px;
+    color: var(--ink-3);
+    min-width: 56px;
+  }
+  .out-row.span > * {
+    border-top: 1px dotted var(--rule);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+
+  .conf {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .conf.hi { background: var(--hi); }
+  .conf.med { background: var(--med); }
+  .conf.low { background: var(--accent); }
+
+  .out-row > .value .range {
+    display: block;
+    font-size: 11px;
+    color: var(--ink-3);
+    font-style: italic;
+    margin-top: 1px;
+    letter-spacing: 0;
+  }
+
+  /* Change highlighting */
+  .out-row > .value.changed,
+  .out-row > .name.changed {
+    background: rgba(168, 66, 31, 0.10);
+    border-radius: 2px;
+  }
+  .out-row > .value.changed {
+    padding: 1px 4px;
+    margin: -1px -4px;
+  }
+  .out-row > .name.changed {
+    padding: 0 4px;
+    margin: 0 -4px;
+  }
+  .delta {
+    display: inline-block;
+    font-family: "SF Mono", "IBM Plex Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    color: var(--accent);
+    margin-left: 4px;
+    font-weight: 600;
+    vertical-align: 1px;
+  }
+  .delta.down { color: var(--hi); }
+
+  .legend {
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dotted var(--rule);
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+  /* Pressure plot */
+  .plot-wrap {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .plot-wrap h2 {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ink-2);
+    margin: 0 0 14px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px dotted var(--rule);
+  }
+  svg.plot { display: block; width: 100%; height: auto; }
+
+  /* Regime label inline indicator */
+  .regime {
+    font-size: 11px;
+    font-style: italic;
+    color: var(--ink-3);
+    margin-left: 6px;
+  }
+  .regime.warn { color: var(--med); }
+  .regime.flag { color: var(--accent); }
+
+  /* Footer / assumptions */
+  details.foot {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px;
+    color: var(--ink-2);
+  }
+  /* Top "guide" details sits right under the header; tight when collapsed,
+     comfortable when expanded. Bottom details keeps terminal padding. */
+  details.foot.guide { padding-bottom: 0; }
+  details.foot.guide[open] { padding-bottom: 8px; }
+  details.foot:last-of-type { padding-bottom: 64px; }
+  details.foot summary {
+    cursor: pointer;
+    font-family: "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    padding: 12px 0;
+    border-top: 1px solid var(--rule);
+    list-style: none;
+  }
+  details.foot summary::before {
+    content: "▸  ";
+    font-family: serif;
+    transition: transform 0.15s;
+  }
+  details.foot[open] summary::before { content: "▾  "; }
+  details.foot .body {
+    padding: 8px 0 16px 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  details.foot ul { margin: 8px 0; padding-left: 20px; }
+  details.foot code {
+    font-family: "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    font-size: 12px;
+    background: var(--paper-2);
+    padding: 1px 4px;
+    border-radius: 2px;
+  }
+  details.foot .prose { max-width: 78ch; }
+  details.foot .prose h3 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    margin: 22px 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px dotted var(--rule);
+    font-style: italic;
+  }
+  details.foot .prose h3:first-child { margin-top: 8px; }
+  details.foot .prose p { margin: 8px 0; }
+  details.foot .prose p strong { color: var(--ink); }
+
+  /* Hover affordance on explainable elements */
+  [data-explain] {
+    cursor: help;
+  }
+  [data-explain]:hover .sym {
+    color: var(--accent);
+  }
+  .ctrl label [data-explain] {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    border-bottom: 1px dotted transparent;
+    transition: border-color 0.12s;
+  }
+  .ctrl label [data-explain]:hover {
+    border-bottom-color: var(--accent);
+  }
+  .out-row > .name[data-explain] {
+    border-bottom: 1px dotted transparent;
+    transition: border-color 0.12s;
+    width: fit-content;
+  }
+  .out-row > .name[data-explain]:hover {
+    border-bottom-color: var(--accent);
+  }
+
+  /* Floating tooltip */
+  #tip {
+    position: absolute;
+    max-width: 380px;
+    min-width: 240px;
+    padding: 12px 14px;
+    background: #fbf7ec;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: 0 14px 36px -10px rgba(28,22,18,0.25), 0 2px 8px rgba(28,22,18,0.08);
+    font-family: "Iowan Old Style", "Palatino Linotype", "Palatino", "Book Antiqua", Georgia, serif;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.08s ease-out;
+  }
+  #tip.visible { opacity: 1; }
+  #tip strong { color: var(--ink); font-weight: 600; }
+  #tip code {
+    font-family: "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    font-size: 11.5px;
+    background: var(--paper-2);
+    padding: 1px 4px;
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">PET / PSA / PSA / PET · roll-to-roll nip · v2 — kinematics + kinetics</div>
+  <h1>Nip lamination, <span class="accent">kinematics &amp; kinetics</span></h1>
+  <p class="tag">Sections 1 and 2 of the framework. Pre-nip geometry &amp; elastomeric contact mechanics (kinematics, high confidence) plus the in-nip rate processes — wet-out, autohesion, air evacuation (kinetics, low confidence). Kinematic outputs feed the kinetic ones as boundary conditions.</p>
+  <div class="caveat">
+    <strong>Read me first.</strong> Kinematic absolutes carry baked-in assumptions: Hertzian line contact with a finite-layer correction (~30% uncertainty in the correction itself), symmetric soft/soft rolls, ν<sub>rubber</sub> ≈ 0.5, steady-state isothermal, Gent conversion from Shore A to E (~15% at low durometer), and a clean parabolic P(x). Kinetic absolutes (τ_rep, σ/σ_∞, τ_evac) inherit all of the above <em>plus</em> WLF time–temperature superposition with typical-silicone default coefficients (C₁ ≈ 4, C₂ ≈ 120 K; not measured for this PSA — change them if you have data), 1–2 orders of magnitude uncertainty in τ_e from MQ resin loading, and an order of magnitude in entrained air thickness. Bands are shown where the uncertainty is dominant. Dimensionless ratios are more robust than absolutes. Treat values as starting points for measurement, not design targets.
+  </div>
+</header>
+
+<details class="foot guide">
+  <summary>Why these outputs matter</summary>
+  <div class="body prose">
+
+    <p>Each output below is a window into a different piece of physics. Kinematics sets the boundary conditions; kinetics tells you whether the bond actually forms during the dwell those boundary conditions provide. Hover any variable name in the input or output columns to see its description here. Outputs that have shifted from their last checkpoint are highlighted (with ▲/▼ direction indicators) until you press "clear highlights" — a quick way to see which outputs respond to a given input twist.</p>
+
+    <h3>Process &amp; equipment inputs</h3>
+
+    <p data-explain-key="F"><strong>Line load (F).</strong> The clamping force per unit nip width applied to the laminate. Direct lever on footprint length (L ∝ √F at the half-space limit, weaker scaling once finite-layer stiffening kicks in) and peak pressure, which then propagate to dwell time and the kinetic budget. On most machines this is back-calculated from a loading-cylinder gauge plus mechanical advantage of the linkage, and the conversion is often the largest measurement uncertainty in the kinematics layer.</p>
+
+    <p data-explain-key="v"><strong>Line speed (v).</strong> The web speed through the nip. Sets dwell time (τ = L/v) and nip event frequency (f_nip ∝ v). Doesn't affect contact geometry. Higher speed compresses the kinetic window proportionally — every doubling of speed halves the dwell available for autohesion and air evacuation, so high-speed lamination forces you to either heat more or accept more post-nip bond build.</p>
+
+    <p data-explain-key="T"><strong>Nip temperature (T).</strong> The surface temperature of the rollers contacting the laminate. The dominant lever on chain dynamics via WLF time–temperature superposition: a 25 → 70 °C nip can shift τ_rep by an order of magnitude or more for resin-loaded silicone PSA, which is usually what makes lamination viable at production speeds. Note that v2 doesn't apply this temperature to G' (assumed plateau-invariant for silicone PSA) or to the rubber modulus.</p>
+
+    <p data-explain-key="Tw"><strong>Web tension per side (T_w).</strong> The line tension in each PSA-coated web before the nip. Combined with the wrap angle, sets the pre-nip belt pressure via P = T·θ/R, which can do real bonding work before the formal nip if it's a non-trivial fraction of nip pressure. At low tensions or small wrap angles, this is negligible.</p>
+
+    <p data-explain-key="wrap"><strong>Wrap angle per side (θ).</strong> The angle over which each web wraps around its roller before reaching the nip. Sets the pre-nip belt pressure (P_belt ∝ θ) and the entry geometry that controls air entrainment at the converging gap. Larger wrap means more pre-nip contact work and a longer converging wedge for air handling.</p>
+
+    <p data-explain-key="D"><strong>Roller OD (D).</strong> The outer diameter of the nip rollers. For two equal cylinders in symmetric contact, R_eff = D/4. Bigger rollers give longer footprint at the same line load (L ∝ √R) and proportionally more dwell time. Usually fixed by the equipment but a key parameter when comparing different laminators or evaluating a hypothetical bigger-roll machine.</p>
+
+    <p data-explain-key="h"><strong>Rubber thickness (h).</strong> The thickness of the rubber cover on each roller. Sets the shape factor S = a/(2h), which determines whether the rubber acts like a half-space (S ≪ 1, free deformation) or a constrained thin pad (S ≫ 1, stiffened by incompressibility against the rigid shaft). Below ~5 mm cover thickness, finite-layer stiffening typically dominates the contact mechanics.</p>
+
+    <p data-explain-key="shoreA"><strong>Rubber durometer (Shore A).</strong> Shore A hardness reading of the rubber cover, converted to elastic modulus via the empirical Gent (1958) relation. Softer rubber spreads the load into a longer footprint with more dwell at lower peak pressure. The Gent conversion carries ~15% uncertainty at low durometer, and the actual rubber modulus also depends on compound chemistry, age, and temperature beyond what a hardness reading captures.</p>
+
+    <p data-explain-key="tPSA"><strong>PSA caliper per side (t_PSA).</strong> Coating thickness of the silicone PSA on each web. In v2 this is an input but doesn't feed contact mechanics — for a soft nip dominated by rubber compliance, PSA layer mechanics are negligible. Will matter in v3 when web bending stiffness is incorporated, and matters now for downstream layer thickness accounting.</p>
+
+    <p data-explain-key="tPET"><strong>PET caliper per side (t_PET).</strong> Thickness of each PET film backing. Like the PSA caliper, an input that doesn't currently feed contact mechanics. Will matter when web bending stiffness coupling is implemented (v3 hook).</p>
+
+    <p data-explain-key="nu"><strong>Rubber Poisson's ratio (ν).</strong> Poisson's ratio of the rubber cover, typically very near 0.5 for elastomers. Near-incompressibility is what drives the finite-layer stiffening: the rubber can't change volume, so when squeezed in one direction it has to bulge in another, and constraint by the rigid shaft converts that lateral pressure into vertical stiffness. The (1−ν²) term in E* makes this output sensitive as ν approaches 0.5.</p>
+
+    <p data-explain-key="Epet"><strong>PET modulus (E_PET).</strong> Elastic modulus of the PET film. A display-only input in v2 (not yet wired into the contact mechanics). Will feed web bending stiffness in v3, at which point web caliper × E_PET will determine whether the web behaves as a "flexible blanket" (current assumption) or as a stiff member that resists conforming to the nip.</p>
+
+    <h3>Moduli — how stiff is the contact?</h3>
+
+    <p data-explain-key="E_rubber_MPa"><strong>Rubber modulus (E_rub).</strong> Compliance of the rubber cover is the single biggest material lever in nip kinematics. Softer rubber spreads the line load into a longer footprint, gives more dwell time at lower peak pressure, and treats the laminate more gently. The Gent conversion from Shore A is empirical and carries ~15% uncertainty at low durometer — the actual rubber modulus depends on compound chemistry, age, and temperature, none of which a durometer reading captures.</p>
+
+    <p data-explain-key="Estar_MPa"><strong>Composite half-space modulus (E*).</strong> The Hertz contact modulus assuming infinite rubber thickness on both sides. Useful as a reference value and as the input to the half-space footprint a_HS, but understates real nip stiffness for any practical cover (thin rubber bonded to a rigid shaft). Don't use E* directly when reasoning about pressure or dwell — use E_eff.</p>
+
+    <p data-explain-key="E_eff_MPa"><strong>Finite-layer effective modulus (E_eff).</strong> The real working modulus when the contact patch approaches the rubber thickness. As the patch grows, the rubber is increasingly squeezed against the steel shaft and its near-incompressibility (ν → 0.5) makes it dramatically stiffer than half-space Hertz predicts. This is the modulus that actually sets the contact mechanics here, and the one you should be quoting when explaining nip behavior to anyone.</p>
+
+    <h3>Geometry — how much contact do you get?</h3>
+
+    <p data-explain-key="Reff_mm"><strong>Effective radius (R_eff).</strong> For two equal cylinders pressed together, R_eff = D/4. Bigger rollers give longer footprint at the same line load and proportionally more dwell. Usually fixed by the equipment, but worth knowing when comparing two laminators or estimating what a hypothetical bigger-roll machine would buy you.</p>
+
+    <p data-explain-key="a_mm"><strong>Contact half-width (a).</strong> The fundamental geometric quantity in the contact mechanics. Pressure rises and falls over ±a, the parabolic profile is most naturally written in terms of x/a, and the shape factor S = a/(2h) uses a directly. Half of the footprint length L.</p>
+
+    <p data-explain-key="L_mm"><strong>Footprint length (L = 2a).</strong> The longitudinal extent of the nip event. What you'd measure with a carbon-paper impression at zero speed. L is the more intuitive number for a process engineer; a is the more fundamental quantity in the physics.</p>
+
+    <h3>Time — what's your clock?</h3>
+
+    <p data-explain-key="tau_ms"><strong>Dwell time (τ).</strong> The fundamental clock of the in-nip kinetics. Autohesion, asperity flattening, air evacuation, and bulk viscous squeeze all have characteristic times that get compared to τ. If a process needs 500 ms to complete and you only have 240 ms in the nip, it doesn't finish in-nip — it continues post-nip as ambient bond build. If τ comfortably exceeds the kinetic timescale, the process completes during transit. Most of the framework's interesting questions reduce to ratios involving τ.</p>
+
+    <p data-explain-key="tau80_ms"><strong>80% bonding window (τ_80).</strong> Because the pressure profile is parabolic, most of the kinetic action happens in the middle of the contact patch where P is near peak. τ_80 is the dwell time spent above 80% of p₀ (≈73% of geometric τ). For pressure-driven processes — asperity flattening, squeeze-out, air pocket collapse — this is the more honest effective dwell. The shoulders of the parabola contribute much less than the middle.</p>
+
+    <p data-explain-key="fnip_Hz"><strong>Nip event frequency (f_nip).</strong> The pressure pulse a fluid element experiences as it transits the nip has frequency content centered around 1/(2τ). This is the bridge from kinematics to rheology: the PSA's behavior (tacky liquid vs. stiff solid) at the nip event is determined by G'(f_nip, T_nip), not by static modulus. Doubling line speed roughly doubles f_nip — the same PSA acts substantially stiffer at higher process speeds. This is the input to the Dahlquist margin in the kinetics layer.</p>
+
+    <h3>Pressure — how hard are you squeezing?</h3>
+
+    <p data-explain-key="p0_kPa"><strong>Peak pressure (p₀).</strong> The centerline compressive stress. Drives the most pressure-sensitive in-nip processes: forcing PSA into substrate asperities, expelling trapped air pockets, and viscoelastic squeeze flow. Also the relevant number for substrate damage limits, if a delicate component is in the laminate stack.</p>
+
+    <p data-explain-key="pmean_kPa"><strong>Mean pressure (p̄).</strong> The simple average over the contact patch. For a parabolic profile, p̄ = (π/4)·p₀ ≈ 0.785·p₀ — fixed by the shape, not an independent number. Mostly useful for computing impulse and for sanity-checking against measured line load / footprint.</p>
+
+    <p data-explain-key="impulse_kPa_s"><strong>Pressure–time impulse (∫P·dt).</strong> The total integrated "pressure exposure" of the laminate during transit. Many viscoelastic processes integrate pressure over time, so impulse is a useful single-number summary of "how hard and how long" combined. Two operating points with the same impulse but different peak/dwell tradeoffs often behave similarly for first-order kinetics and differently for nonlinear ones — useful but not the whole story.</p>
+
+    <p data-explain-key="Pbelt_kPa"><strong>Pre-nip belt pressure (P_belt).</strong> Web wrap around the rollers before the formal nip applies pressure via the belt equation P ≈ T·θ/R. Usually well below 1% of nip pressure and ignorable. But at high web tension with high wrap angle on small rollers, this can climb to several percent of p₀, at which point air evacuation, surface wet-out, and even some PSA flow start happening pre-nip. The ratio P_belt/p₀ tells you whether to bother analyzing the pre-nip section as its own thing.</p>
+
+    <h3>Rheology &amp; chain dynamics — what is the PSA doing?</h3>
+
+    <p data-explain-key="Gprime"><strong>Storage modulus at nip conditions (G').</strong> The defining rheological property of the PSA at the nip's actual frequency and temperature — and the property that decides whether the material can wet the contacting surface at all. Below the Dahlquist threshold (~3×10⁵ Pa) the material flows enough to wet substrate microroughness in the available dwell; above it, the material is too elastic and no bond forms regardless of pressure. For silicone PSAs in the rubbery plateau, expect roughly 10⁴–10⁵ Pa. Crucially, the value at f_nip and T_nip is what matters, not a TDS room-temperature, 1 Hz value — these can differ by 10× or more. Needs to be measured (DMA frequency &amp; temperature sweep) on the actual PSA; the framework's master curves are schematic, not specific to any particular PSA.</p>
+
+    <p data-explain-key="Mw"><strong>Polymer molecular weight (M_w).</strong> The molecular weight of polymer chains between effective network constraints. Sets the reptation time via M_w³ scaling — a 2× change in M_w corresponds to an 8× change in τ_rep. Industry-typical for silicone PSA is 500–1000 kg/mol but this is supplier-specific and rarely on the TDS.</p>
+
+    <p data-explain-key="Me"><strong>Entanglement molecular weight (M_e).</strong> The polymer mass per entanglement, set by chain stiffness and packing. For neat PDMS, M_e ≈ 12 kg/mol. For commercial silicone PSAs with MQ silicate resin (30–60 wt% typical), the effective M_e is raised by the resin domains acting as additional crosslink-like constraints — realistic values are 25–50 kg/mol. M_w/M_e is the number of entanglements per chain.</p>
+
+    <p data-explain-key="tau_e"><strong>Entanglement relaxation time at the reference temperature (τ_e at T_ref).</strong> The characteristic relaxation time of a single entanglement segment at the WLF reference temperature you've chosen (default 25 °C). For neat PDMS at room temperature this is on the order of 1 µs; MQ resin loading in commercial silicone PSAs slows this by 10–100×. This is the dominant uncertainty in the kinetics analysis — the framework explicitly flags it as 1–2 orders of magnitude wide for resin-loaded silicone PSAs. The "uncertainty factor" slider lets you see the band that propagates through to τ_rep and bond fraction.</p>
+
+    <p data-explain-key="tau_e_fac"><strong>τ_e uncertainty factor.</strong> A multiplicative band on τ_e capturing how poorly known the entanglement relaxation time is for this PSA. A value of 10 means τ_e could be 10× higher or 10× lower than the central estimate, propagating to a 10×-each-side band on τ_rep and a fourth-root band on σ/σ_∞. Set this large (≥10) when you have no PSA-specific DMA data; narrow it when measurements come in.</p>
+
+    <p data-explain-key="Tref"><strong>WLF reference temperature (T_ref).</strong> The temperature at which you've quoted τ_e — typically the temperature at which DMA was measured, often 25 °C. WLF then shifts τ_e from T_ref to the nip temperature. Setting T_ref equal to T_nip turns off the WLF shift (a_T = 1), which is useful as a sanity check.</p>
+
+    <p data-explain-key="C1"><strong>WLF C₁ coefficient.</strong> Dimensionless coefficient in the Williams–Landel–Ferry equation log₁₀(a_T) = −C₁·(T − T_ref) / (C₂ + T − T_ref). Sets the magnitude of the temperature shift. For neat PDMS referenced near Tg, the universal WLF constants give C₁ ≈ 17.4; for resin-loaded silicone PSA referenced to room temperature, typical values are roughly C₁ ≈ 4 — but these are not measured for this PSA and should be replaced with DMA-derived values when available.</p>
+
+    <p data-explain-key="C2"><strong>WLF C₂ coefficient.</strong> Coefficient in the WLF denominator, in kelvin. Sets the curvature of the temperature shift and the location of the WLF singularity at T = T_ref − C₂ (corresponding roughly to the polymer's vitrification point). For silicone PSA referenced to room temperature, typical values are C₂ ≈ 120 K. The regime label on a_T flags conditions where T_nip is approaching the singularity.</p>
+
+    <p data-explain-key="h_air"><strong>Entrained air film thickness (h_air).</strong> The thickness of the air layer trapped between the two PSA surfaces at the entry to the nip footprint, before squeeze-out begins. Sets the timescale for Stefan air evacuation (h^(−2) scaling — very sensitive). From dip-coating analogies and lubrication theory expect 0.5–5 µm at moderate line speeds; thinner at low speed (less viscous entrainment), thicker at high speed. Genuinely uncertain in nip geometry — the dip-coating literature can be off by an order of magnitude when applied here.</p>
+
+    <h3>Kinetic outputs — does the bond actually form?</h3>
+
+    <p data-explain-key="Z"><strong>Entanglements per chain (Z = M_w/M_e).</strong> The simple ratio of molecular weight to entanglement molecular weight — number of entanglements per polymer chain. Determines the cubic Z³ scaling in reptation time. Output rather than input because it's derived from M_w and M_e, but useful to see directly: at typical defaults Z = 30, so Z³ = 27000 — a 30-fold change in entanglement density (say M_e going from 25 to 75 kg/mol) collapses τ_rep by a factor of 27.</p>
+
+    <p data-explain-key="tau_e_eff_s"><strong>τ_e shifted to T_nip (τ_e(T_nip)).</strong> The effective entanglement relaxation time at the actual nip temperature, after the WLF shift has been applied to your T_ref value. This is the number that feeds τ_rep directly. Watching how this output changes as you twist T_nip is the cleanest way to build intuition for how temperature drives the kinetics — at typical silicone WLF coefficients, going from 25 °C to 71 °C compresses τ_e by ~13×, and τ_rep with it.</p>
+
+    <p data-explain-key="tau_rep_c_s"><strong>Reptation time (τ_rep).</strong> The time required for a polymer chain to diffuse a distance comparable to its own coil radius through the entanglement network, at the nip temperature. For a self-mated PSA bond, this is the natural timescale for chains from one side to interdiffuse with chains from the other, building the entanglement bridges that give the bond its peel strength. Scales as τ_e(T_nip)·(M_w/M_e)³. The band shown reflects the τ_e uncertainty (independent of the WLF shift, which is treated as deterministic) and is typically 1–2 orders of magnitude wide.</p>
+
+    <p data-explain-key="sigma_c"><strong>Bond completeness at nip exit (σ/σ_∞).</strong> Per Wool–de Gennes, the fraction of full peel strength achieved as a function of contact time: σ/σ_∞ ≈ (t/τ_rep)^(1/4), capped at 1.0. Tells you what fraction of the eventual peel strength the bond has reached when the laminate exits the nip. If σ/σ_∞ &lt; 1 at exit, the bond continues to build at ambient temperature over hours-to-days — this is exactly the prediction the framework wants you to test with a bond-build curve at 1 min / 1 hr / 24 hr / 72 hr / 168 hr.</p>
+
+    <p data-explain-key="tau_evac_s"><strong>Stefan air evacuation time (τ_evac).</strong> The characteristic time for trapped air to flow radially out of the closing PSA/PSA gap under nip pressure, from Stefan–Reynolds lubrication theory: τ_evac ≈ 3η·a²/(2 p₀·h²). Highly sensitive to entrained film thickness (h^(−2)) and lateral extent (a²). Treats air as Newtonian and isothermal, which is fine for the timescales involved.</p>
+
+    <h3>Dimensionless ratios — what regime are you in?</h3>
+
+    <p data-explain-key="S"><strong>Shape factor (S = a/2h).</strong> Distinguishes between two limiting cases of rubber contact mechanics. When S ≪ 1, the patch is small relative to rubber thickness and the rubber deforms freely as a half-space — standard Hertz applies. When S ≫ 1, the patch spans many rubber thicknesses and the rubber is squeezed into a thin near-incompressible layer between two rigid surfaces, dramatically stiffer. The transitional regime S ~ 0.5 to 2 is where the (1+2S²) correction is documented and reasonable. Beyond that the formula is just an extrapolation and the absolute numbers degrade — the regime label flags this.</p>
+
+    <p data-explain-key="corr"><strong>Correction factor (E_eff/E*).</strong> How much the finite-layer effect stiffens the contact relative to the half-space prediction. Tells you immediately how much "thin-pad" character your nip has. At the machine baseline this is about 3.7×, which means more than two-thirds of the nip's mechanical stiffness comes from the rubber being constrained against the shaft, not from rubber compliance per se. This is why durometer alone is a poor predictor of nip behavior — geometry and durometer are coupled through this factor, and a 36 Shore A rubber on a thin cover behaves much harder than 36 Shore A on a thick one.</p>
+
+    <p data-explain-key="aOverR"><strong>Contact aspect (a/R).</strong> Hertz theory assumes a ≪ R, so the roller surface within the contact patch can be approximated as flat. Once a/R climbs past ~0.15 the patch covers a noticeable arc and the geometry within the contact is no longer flat — Hertz starts to strain. At a/R &gt; 0.3 the theory is genuinely degraded. For a soft-soft nip at high line load this regime is reachable, and it's a flag to treat the absolute numbers (L, p₀, τ) as more uncertain than the confidence badges alone suggest.</p>
+
+    <p data-explain-key="PbeltRatio"><strong>Pre-nip / peak pressure (P_belt/p₀).</strong> Answers whether the entry geometry is doing real work or can be neglected. Most R2R laminators with stiff webs and small wrap angles sit comfortably in the "negligible" regime (&lt; 1%). Heavy-tension setups or large wrap angles can drift into "non-trivial" (a few percent), at which point pre-nip contact mechanics deserve their own analysis rather than a footnote. The regime label flags when this transition happens.</p>
+
+    <p data-explain-key="aT"><strong>WLF shift factor (a_T).</strong> Dimensionless multiplier on relaxation times going from the reference temperature to the nip temperature. a_T &lt; 1 means dynamics are faster at the nip than at the reference; a_T &gt; 1 means slower. At the default T_ref = 25 °C and T_nip = 71 °C with typical silicone WLF coefficients, a_T comes out around 0.08 — meaning chain dynamics are roughly 13× faster at the nip than at room temperature. This is the dominant route by which nip temperature affects bond formation in the model. The regime label flags when WLF starts to strain (T_nip well below T_ref, near the WLF singularity at T = T_ref − C₂).</p>
+
+    <p data-explain-key="Dq_margin"><strong>Dahlquist margin (G'_threshold / G').</strong> Multiplicative factor by which the PSA is below the empirical Dahlquist tack threshold at nip conditions. A margin above 10 means comfortable wetting; 3–10 is workable; 1–3 is marginal and can give patchy bonding; below 1 the material is too elastic to wet the surface and no bond forms. Dahlquist is an empirical criterion (~60 years of PSA practice behind it) and a soft threshold, not a hard cliff — but consistently below 1 is a strong negative signal.</p>
+
+    <p data-explain-key="auto_ratio_c"><strong>Autohesion completeness (τ_dwell / τ_rep).</strong> The dimensionless ratio that determines whether autohesion completes in-nip or continues post-nip. Greater than 1: bond fully forms during dwell. 0.01–1: partial in-nip bond with continued ambient build. Less than 0.01: very little bond forms in-nip; the laminate relies almost entirely on post-nip ambient build for its strength. The fourth-root in Wool–de Gennes is forgiving here — even at τ_dwell/τ_rep = 0.1 you get ~56% of full strength — so "the bond builds slowly but it builds" is the realistic story for resin-loaded silicone in a nip.</p>
+
+    <p data-explain-key="evac_margin"><strong>Air evacuation margin (τ_dwell / τ_evac).</strong> Multiplicative factor by which there's enough dwell to squeeze out the entrained air. Above 10: comfortable; near 1: marginal, expect some bubble defects; below 1: trapped air remains in the bond plane and may cause visible voids or weak spots. Note this is necessary but not sufficient — even with air evacuated, if the PSA can't wet the asperities (Dahlquist-limited) you still get patchy bonding.</p>
+
+  </div>
+</details>
+
+<main>
+
+  <section class="inputs">
+
+    <div class="action-bar">
+      <button class="reset" id="reset-btn-top">↺ reset to baseline values</button>
+      <button class="reset" id="clear-hl-btn-top">✓ clear highlights</button>
+    </div>
+
+    <div class="card">
+      <h2>Process</h2>
+      <div id="g-process"></div>
+    </div>
+
+    <div class="card">
+      <h2>Geometry</h2>
+      <div id="g-geometry"></div>
+    </div>
+
+    <div class="card">
+      <h2>Material</h2>
+      <div id="g-material"></div>
+    </div>
+
+    <div class="card">
+      <h2>PSA rheology &amp; chain dynamics</h2>
+      <div id="g-rheology"></div>
+      <div class="reset-row">
+        <button class="reset" id="reset-btn">↺ reset to baseline values</button>
+        <button class="reset" id="clear-hl-btn">✓ clear highlights</button>
+      </div>
+    </div>
+
+  </section>
+
+  <section class="outputs">
+
+    <div class="card">
+      <h2>Kinematic outputs (absolute)</h2>
+      <div class="out-table" id="g-abs"></div>
+      <div class="legend">
+        <span><span class="conf hi"></span> high confidence — pure geometry / Hertz half-space</span>
+        <span><span class="conf med"></span> medium — depends on finite-layer correction</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Kinetic outputs (absolute)</h2>
+      <div class="out-table" id="g-kin"></div>
+      <div class="legend">
+        <span><span class="conf low"></span> low confidence — kinetics inherit chain-dynamics &amp; air-film uncertainty (bands shown)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Dimensionless ratios &amp; regime indicators<span class="units-key"><span class="ks">—</span> pure ratio <span class="ks">×</span> multiplier</span></h2>
+      <div class="out-table" id="g-dim"></div>
+    </div>
+
+    <div class="plot-wrap">
+      <h2>Pressure profile across the nip footprint</h2>
+      <svg class="plot" id="plot" viewBox="0 0 720 280" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+  </section>
+
+</main>
+
+<details class="foot">
+  <summary>Assumptions, equations, hooks for v3</summary>
+  <div class="body">
+
+    <p><strong>Geometry &amp; contact mechanics (kinematics).</strong></p>
+    <ul>
+      <li>Two equal cylindrical rolls with parallel axes → effective radius <code>R_eff = D/4</code>.</li>
+      <li>Symmetric soft/soft contact with ν=0.49 → composite half-space modulus <code>1/E* = 2(1-ν²)/E_rubber</code>.</li>
+      <li>Shore A → E by Gent (1958): <code>E (MPa) = 0.0981·(56 + 7.62336·S) / (0.137505·(254 - 2.54·S))</code>. ~15% uncertainty at low durometer.</li>
+      <li>Hertz line contact (force per unit length F): <code>a²_HS = 4FR/(πE*)</code>; <code>p₀ = √(F·E_eff/(πR))</code>.</li>
+      <li>Finite-layer correction: <code>E_eff/E* = 1 + 2S²</code> where <code>S = a/(2h_rubber)</code>. Solved consistently for a: <code>a² = h²·(-1 + √(1 + 8FR/(πE*h²)))</code>. ~30% uncertainty in the form itself.</li>
+      <li>Parabolic pressure profile <code>P(x) = p₀·√(1-(x/a)²)</code>, mean <code>p̄ = π·p₀/4</code>.</li>
+      <li>80% bonding window from <code>P/p₀ ≥ 0.8</code> → <code>|x|/a ≤ 0.6</code>, so <code>τ_80 = 1.2a/v</code>.</li>
+      <li>Nip event frequency <code>f_nip = 1/(2τ)</code> — the compression-release transit is a half-cycle.</li>
+      <li>Pre-nip belt pressure <code>P_belt = T_web·θ_wrap/R_roller</code> from each side's wrap.</li>
+    </ul>
+
+    <p><strong>Rheology &amp; kinetics.</strong></p>
+    <ul>
+      <li>G' is taken as user-supplied at the actual nip (ω, T). In the rubbery plateau G' is approximately T-invariant, so for silicone PSA in the 0–100 °C range a measured G' at any T inside the plateau is fine. No frequency shift is applied (plateau also flat in ω). For PSAs near Tg or terminal flow, this approximation fails and G' should be adjusted manually.</li>
+      <li>WLF time–temperature superposition is applied to τ_e: <code>log₁₀(a_T) = −C₁·(T_nip − T_ref) / (C₂ + T_nip − T_ref)</code>, and <code>τ_e(T_nip) = τ_e(T_ref) · a_T</code>. Defaults C₁ = 4, C₂ = 120 K, T_ref = 25 °C are typical silicone-PSA values, not measured for this PSA. WLF has a singularity at T = T_ref − C₂; near that point (T ≤ ~ Tg) the formula is unphysical and the regime label flags it.</li>
+      <li>Reptation time per Wool–de Gennes: <code>τ_rep = τ_e(T_nip) · (M_w/M_e)³</code>. The cubic scaling means M_w uncertainty dominates if known badly; for silicone PSA the τ_e uncertainty (1–2 orders of magnitude from MQ resin loading) usually dominates, which is why the band reflects τ_e × factor.</li>
+      <li>Bond completeness per Wool: <code>σ/σ_∞ = (t/τ_rep)^(1/4)</code> capped at 1.0. The fourth-root form comes from the t^(1/4) scaling of interpenetration depth in reptation theory.</li>
+      <li>Dahlquist criterion: G' &lt; 3×10⁵ Pa at 1 Hz is empirical for tack. The model uses the user-supplied G' regardless of the f_nip in the kinematics layer — it's the user's responsibility to enter the right G' for the conditions they care about.</li>
+      <li>Stefan-Reynolds air evacuation (half-thinning timescale): <code>τ_evac ≈ 3η·a²/(2·p₀·h²)</code> with η_air ≈ 2×10⁻⁵ Pa·s (treated as constant over the relevant T range). Highly sensitive to h_air via h⁻².</li>
+    </ul>
+
+    <p><strong>What's <em>still</em> not in the model (hooks for v3).</strong></p>
+    <ul>
+      <li>WLF shifting of G' on frequency (currently only τ_e shifts on T). Useful when the available G' measurement isn't at the nip frequency, or when the PSA is near the edges of its plateau where G' becomes T-sensitive.</li>
+      <li>Service-life section: thermal cycling fatigue, CTE-mismatch edge strain, viscoelastic creep, outgassing flux from the dominant volatile species' vapor-pressure curve.</li>
+      <li>Asymmetric stack — modelling the actual third substrate (circuit) threading through the nip alongside the two PSA-coated webs.</li>
+      <li>Web bending stiffness vs rubber stiffness — currently PSA &amp; PET calipers are inputs but don't feed contact mechanics. For a stiffer web on a softer nip this is fine; for limit cases it matters.</li>
+      <li>Tornado / sensitivity panel: dOutput/dInput for each input at the current operating point — directly the robustness-analysis deliverable.</li>
+      <li>Capillary number for air entrainment at the entry wedge, to estimate h_air from inputs rather than treating it as a knob.</li>
+    </ul>
+
+  </div>
+</details>
+
+<script>
+"use strict";
+
+// ────────────────────────────────────────────────────────────
+// Input schema. Each entry: id, label, sym, units, min, max, step, default, group
+// ────────────────────────────────────────────────────────────
+const INPUTS = [
+  // Process
+  { id: "F",        label: "Line load",          sym: "F",        units: "N/m",    min: 500,  max: 15000, step: 100,   def: 6500,  group: "process" },
+  { id: "v",        label: "Line speed",         sym: "v",        units: "mm/s",   min: 10,   max: 300,   step: 1,     def: 75,    group: "process" },
+  { id: "T",        label: "Nip temperature",    sym: "T",        units: "°C",     min: 20,   max: 120,   step: 1,     def: 71,    group: "process" },
+  { id: "Tw",       label: "Web tension /side",  sym: "T_w",      units: "N/m",    min: 0,    max: 500,   step: 5,     def: 100,   group: "process" },
+  { id: "wrap",     label: "Wrap angle /side",   sym: "θ",        units: "°",      min: 0,    max: 90,    step: 1,     def: 30,    group: "process" },
+  // Geometry
+  { id: "D",        label: "Roller OD",          sym: "D",        units: "mm",     min: 50,   max: 400,   step: 1,     def: 203,   group: "geometry" },
+  { id: "h",        label: "Rubber thickness",   sym: "h",        units: "mm",     min: 0.5,  max: 15,    step: 0.1,   def: 4.76,  group: "geometry" },
+  { id: "shoreA",   label: "Rubber durometer",   sym: "ShoreA",   units: "",       min: 20,   max: 90,    step: 1,     def: 36,    group: "geometry" },
+  { id: "tPSA",     label: "PSA caliper /side",  sym: "t_PSA",    units: "µm",     min: 10,   max: 200,   step: 1,     def: 50,    group: "geometry" },
+  { id: "tPET",     label: "PET caliper /side",  sym: "t_PET",    units: "µm",     min: 10,   max: 200,   step: 1,     def: 50,    group: "geometry" },
+  // Material
+  { id: "nu",       label: "Rubber Poisson's ν", sym: "ν",        units: "",       min: 0.40, max: 0.499, step: 0.001, def: 0.49,  group: "material" },
+  { id: "Epet",     label: "PET modulus",        sym: "E_PET",    units: "GPa",    min: 1,    max: 8,     step: 0.1,   def: 4.0,   group: "material" },
+  // PSA rheology & chain dynamics
+  { id: "Gprime",   label: "G' at nip (ω, T)",   sym: "G'",       units: "Pa",     min: 1e3,  max: 1e7,   step: 1,     def: 5e4,   group: "rheology", scale: "log" },
+  { id: "Mw",       label: "Polymer M_w",        sym: "M_w",      units: "kg/mol", min: 100,  max: 2000,  step: 10,    def: 750,   group: "rheology" },
+  { id: "Me",       label: "Entanglement M_e",   sym: "M_e",      units: "kg/mol", min: 5,    max: 100,   step: 1,     def: 25,    group: "rheology" },
+  { id: "tau_e",    label: "τ_e at T_ref",       sym: "τ_e",      units: "µs",     min: 0.1,  max: 1000,  step: 0.1,   def: 10,    group: "rheology", scale: "log" },
+  { id: "tau_e_fac",label: "τ_e uncertainty",    sym: "×",        units: "factor", min: 1,    max: 100,   step: 0.5,   def: 10,    group: "rheology", scale: "log" },
+  { id: "Tref",     label: "WLF reference T",    sym: "T_ref",    units: "°C",     min: -50,  max: 100,   step: 1,     def: 25,    group: "rheology" },
+  { id: "C1",       label: "WLF C₁",             sym: "C₁",       units: "",       min: 1,    max: 25,    step: 0.1,   def: 4,     group: "rheology" },
+  { id: "C2",       label: "WLF C₂",             sym: "C₂",       units: "K",      min: 20,   max: 300,   step: 1,     def: 120,   group: "rheology" },
+  { id: "h_air",    label: "Entrained air film", sym: "h_air",    units: "µm",     min: 0.05, max: 20,    step: 0.05,  def: 1.0,   group: "rheology", scale: "log" },
+];
+
+// Current state
+const state = {};
+INPUTS.forEach(i => state[i.id] = i.def);
+
+// ────────────────────────────────────────────────────────────
+// Build input controls
+// ────────────────────────────────────────────────────────────
+function buildInputs() {
+  INPUTS.forEach(i => {
+    const wrap = document.createElement("div");
+    wrap.className = "ctrl";
+
+    const label = document.createElement("label");
+    label.innerHTML = `
+      <span data-explain="${i.id}"><span class="sym">${i.sym}</span> &nbsp;${i.label}</span>
+      <span class="units">${i.units}</span>
+    `;
+    wrap.appendChild(label);
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+
+    const isLog = i.scale === "log";
+    if (isLog) {
+      const lmin = Math.log10(i.min);
+      const lmax = Math.log10(i.max);
+      slider.min = 0;
+      slider.max = 1000;
+      slider.step = 1;
+      slider.value = ((Math.log10(i.def) - lmin) / (lmax - lmin)) * 1000;
+    } else {
+      slider.min = i.min; slider.max = i.max; slider.step = i.step;
+      slider.value = i.def;
+    }
+    slider.id = "s-" + i.id;
+    wrap.appendChild(slider);
+
+    const num = document.createElement("input");
+    num.type = "number";
+    num.min = i.min; num.max = i.max; num.step = i.step;
+    num.value = isLog ? i.def.toPrecision(3) : i.def;
+    num.id = "n-" + i.id;
+    wrap.appendChild(num);
+
+    function logSliderToVal(pos) {
+      const lmin = Math.log10(i.min);
+      const lmax = Math.log10(i.max);
+      return Math.pow(10, lmin + (pos / 1000) * (lmax - lmin));
+    }
+    function valToLogSlider(v) {
+      const lmin = Math.log10(i.min);
+      const lmax = Math.log10(i.max);
+      return ((Math.log10(v) - lmin) / (lmax - lmin)) * 1000;
+    }
+
+    slider.addEventListener("input", () => {
+      let v;
+      if (isLog) {
+        v = logSliderToVal(+slider.value);
+        num.value = v < 0.1 ? v.toPrecision(3) : (v < 100 ? v.toPrecision(3) : v.toPrecision(4));
+      } else {
+        v = +slider.value;
+        num.value = slider.value;
+      }
+      state[i.id] = v;
+      recompute();
+    });
+    num.addEventListener("input", () => {
+      let v = Math.max(i.min, Math.min(i.max, +num.value || i.def));
+      state[i.id] = v;
+      slider.value = isLog ? valToLogSlider(v) : v;
+      recompute();
+    });
+
+    document.getElementById("g-" + i.group).appendChild(wrap);
+  });
+
+  function doReset() {
+    INPUTS.forEach(i => {
+      const isLog = i.scale === "log";
+      state[i.id] = i.def;
+      const slider = document.getElementById("s-" + i.id);
+      const num = document.getElementById("n-" + i.id);
+      if (isLog) {
+        const lmin = Math.log10(i.min);
+        const lmax = Math.log10(i.max);
+        slider.value = ((Math.log10(i.def) - lmin) / (lmax - lmin)) * 1000;
+        num.value = i.def.toPrecision(3);
+      } else {
+        slider.value = i.def;
+        num.value = i.def;
+      }
+    });
+    // Reset is a fresh baseline — re-seed checkpoint so nothing is highlighted
+    checkpoint = compute(state);
+    recompute();
+  }
+  document.getElementById("reset-btn").addEventListener("click", doReset);
+  document.getElementById("reset-btn-top").addEventListener("click", doReset);
+}
+
+// ────────────────────────────────────────────────────────────
+// Physics
+// ────────────────────────────────────────────────────────────
+function gentE(shoreA) {
+  // Returns rubber modulus in Pa from Shore A durometer (Gent 1958).
+  const num = 0.0981 * (56 + 7.62336 * shoreA);
+  const den = 0.137505 * (254 - 2.54 * shoreA);
+  return (num / den) * 1e6;
+}
+
+function compute(s) {
+  // SI conversions
+  const F      = s.F;                      // N/m
+  const v      = s.v * 1e-3;               // m/s
+  const D      = s.D * 1e-3;               // m
+  const h      = s.h * 1e-3;               // m
+  const Tw     = s.Tw;                     // N/m
+  const wrap   = s.wrap * Math.PI / 180;   // rad
+  const nu     = s.nu;
+  const shoreA = s.shoreA;
+
+  // Moduli
+  const E_rubber = gentE(shoreA);                       // Pa
+  const Estar    = E_rubber / (2 * (1 - nu * nu));      // Pa  symmetric soft/soft
+
+  // Effective radius
+  const Reff = D / 4;                                   // m  (two equal cylinders)
+
+  // Half-space Hertz a
+  const c        = 4 * F * Reff / (Math.PI * Estar);    // m²
+  const a_HS     = Math.sqrt(c);                        // m
+
+  // Finite-layer corrected a (closed form from a²(1 + a²/(2h²)) = c)
+  const u        = h * h * (-1 + Math.sqrt(1 + 2 * c / (h * h)));
+  const a        = Math.sqrt(u);                        // m
+  const S        = a / (2 * h);
+  const corr     = 1 + 2 * S * S;
+  const E_eff    = Estar * corr;
+
+  // Pressure profile
+  const p0       = Math.sqrt(F * E_eff / (Math.PI * Reff));  // Pa
+  const pmean    = Math.PI * p0 / 4;                          // Pa
+
+  // Footprint, dwell
+  const L        = 2 * a;                                // m
+  const tau      = L / v;                                // s
+  const tau80    = 1.2 * a / v;                          // s
+  const impulse  = pmean * tau;                          // Pa·s
+  const fnip     = 1 / (2 * tau);                        // Hz
+
+  // Pre-nip belt pressure
+  const Rroll    = D / 2;
+  const Pbelt    = Tw * wrap / Rroll;                    // Pa
+
+  // ── V2: rheology & kinetics ─────────────────────────────────────
+  const Gprime   = s.Gprime;                             // Pa, at nip ω & T
+  const Mw       = s.Mw;                                 // kg/mol
+  const Me       = s.Me;                                 // kg/mol
+  const tau_e_ref= s.tau_e * 1e-6;                       // µs → s, at T_ref
+  const tau_e_fac= s.tau_e_fac;                          // multiplicative band on tau_e
+  const Tref     = s.Tref;                               // °C
+  const C1       = s.C1;
+  const C2       = s.C2;                                 // K
+  const h_air    = s.h_air * 1e-6;                       // µm → m
+
+  // WLF time–temperature shift, T_nip relative to T_ref:
+  //   log10(a_T) = -C1·(T - T_ref) / (C2 + T - T_ref)
+  // a_T < 1 for T > T_ref (chain dynamics speed up at higher T)
+  const dT       = s.T - Tref;
+  const log_aT   = -C1 * dT / (C2 + dT);
+  const aT       = Math.pow(10, log_aT);
+  const tau_e_eff= tau_e_ref * aT;                       // τ_e at T_nip
+
+  // Reptation time per Wool–de Gennes scaling: τ_rep = τ_e · (M_w/M_e)^3
+  const Z        = Mw / Me;
+  const Z3       = Math.pow(Z, 3);
+  const tau_rep_c  = tau_e_eff * Z3;                     // central, at T_nip
+  const tau_rep_lo = (tau_e_eff / tau_e_fac) * Z3;       // optimistic (faster)
+  const tau_rep_hi = (tau_e_eff * tau_e_fac) * Z3;       // pessimistic (slower)
+
+  // Bond completeness σ/σ∞ = (t/τ_rep)^(1/4), capped at 1
+  function bondAt(td, tr) {
+    if (tr <= 0) return 1;
+    if (td >= tr) return 1;
+    return Math.pow(td / tr, 0.25);
+  }
+  const sigma_c  = bondAt(tau, tau_rep_c);
+  // Pessimistic σ uses the LONGER τ_rep (less time per τ_rep → less bonding)
+  const sigma_lo = bondAt(tau, tau_rep_hi);
+  const sigma_hi = bondAt(tau, tau_rep_lo);
+
+  // Dahlquist margin
+  const Dq_thresh = 3e5;                                 // Pa
+  const Dq_margin = Dq_thresh / Gprime;
+
+  // Stefan-Reynolds air evacuation
+  // τ_evac ≈ 3 η_air a² / (2 p₀ h_air²)  (Reynolds lubrication, half-thinning timescale)
+  const eta_air  = 2e-5;                                 // Pa·s, dry air ~70 °C
+  const tau_evac = (3 * eta_air * a * a) / (2 * p0 * h_air * h_air);   // s
+  const evac_margin = tau / tau_evac;
+
+  // Autohesion completeness ratio (central)
+  const auto_ratio_c  = tau / tau_rep_c;
+  const auto_ratio_lo = tau / tau_rep_hi;
+  const auto_ratio_hi = tau / tau_rep_lo;
+
+  return {
+    // Moduli
+    E_rubber_MPa: E_rubber / 1e6,
+    Estar_MPa:    Estar    / 1e6,
+    E_eff_MPa:    E_eff    / 1e6,
+    corr:         corr,
+    // Geometry
+    Reff_mm:      Reff * 1000,
+    a_mm:         a * 1000,
+    a_HS_mm:      a_HS * 1000,
+    L_mm:         L * 1000,
+    // Time
+    tau_ms:       tau * 1000,
+    tau80_ms:     tau80 * 1000,
+    fnip_Hz:      fnip,
+    // Pressure
+    p0_kPa:       p0 / 1000,
+    pmean_kPa:    pmean / 1000,
+    impulse_kPa_s:impulse / 1000,
+    Pbelt_kPa:    Pbelt / 1000,
+    // Dimensionless (kinematic)
+    S:            S,
+    aOverR:       a / Reff,
+    PbeltRatio:   Pbelt / p0,
+    // Kinetic absolutes (with bands)
+    Z:            Z,
+    aT:           aT,
+    tau_e_eff_s:  tau_e_eff,
+    tau_rep_c_s:  tau_rep_c,
+    tau_rep_lo_s: tau_rep_lo,
+    tau_rep_hi_s: tau_rep_hi,
+    sigma_c:      sigma_c,
+    sigma_lo:     sigma_lo,
+    sigma_hi:     sigma_hi,
+    tau_evac_s:   tau_evac,
+    // Dimensionless (kinetic)
+    Dq_margin:    Dq_margin,
+    auto_ratio_c: auto_ratio_c,
+    auto_ratio_lo:auto_ratio_lo,
+    auto_ratio_hi:auto_ratio_hi,
+    evac_margin:  evac_margin,
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// Output schema
+// ────────────────────────────────────────────────────────────
+function fmt(n, sig = 3) {
+  if (!isFinite(n)) return "—";
+  if (n === 0) return "0";
+  const abs = Math.abs(n);
+  if (abs >= 1000) return n.toFixed(0);
+  if (abs >= 100)  return n.toFixed(1);
+  if (abs >= 10)   return n.toFixed(2);
+  if (abs >= 1)    return n.toFixed(3);
+  if (abs >= 0.01) return n.toFixed(3);
+  return n.toExponential(2);
+}
+
+// Auto-scaled time formatter — picks µs / ms / s / min / h
+function fmtTime(t_s) {
+  if (!isFinite(t_s) || t_s <= 0) return "—";
+  const a = Math.abs(t_s);
+  if (a < 1e-6)  return (t_s * 1e9).toFixed(1) + " ns";
+  if (a < 1e-3)  return (t_s * 1e6).toFixed(a*1e6 < 10 ? 1 : 0) + " µs";
+  if (a < 1)     return (t_s * 1e3).toFixed(a*1e3 < 10 ? 1 : 0) + " ms";
+  if (a < 60)    return t_s.toFixed(a < 10 ? 2 : 1) + " s";
+  if (a < 3600)  return (t_s/60).toFixed(1) + " min";
+  if (a < 86400) return (t_s/3600).toFixed(1) + " h";
+  return (t_s/86400).toFixed(1) + " d";
+}
+
+const ABS_OUT = [
+  { name: "Rubber modulus",              sym: "E_rub",   key: "E_rubber_MPa",  units: "MPa",   conf: "hi"  },
+  { name: "Composite half-space mod.",   sym: "E*",      key: "Estar_MPa",     units: "MPa",   conf: "hi"  },
+  { name: "Finite-layer effective mod.", sym: "E_eff",   key: "E_eff_MPa",     units: "MPa",   conf: "med" },
+  { name: "Effective radius",            sym: "R_eff",   key: "Reff_mm",       units: "mm",    conf: "hi"  },
+  { name: "Contact half-width",          sym: "a",       key: "a_mm",          units: "mm",    conf: "med" },
+  { name: "Footprint length",            sym: "L = 2a",  key: "L_mm",          units: "mm",    conf: "med" },
+  { name: "Dwell time",                  sym: "τ",       key: "tau_ms",        units: "ms",    conf: "med" },
+  { name: "80% bonding window",          sym: "τ_80",    key: "tau80_ms",      units: "ms",    conf: "med" },
+  { name: "Nip event frequency",         sym: "f_nip",   key: "fnip_Hz",       units: "Hz",    conf: "med" },
+  { name: "Peak pressure",               sym: "p₀",      key: "p0_kPa",        units: "kPa",   conf: "med" },
+  { name: "Mean pressure",               sym: "p̄",      key: "pmean_kPa",     units: "kPa",   conf: "med" },
+  { name: "Pressure–time impulse",       sym: "∫P·dt",   key: "impulse_kPa_s", units: "kPa·s", conf: "med" },
+  { name: "Pre-nip belt pressure",       sym: "P_belt",  key: "Pbelt_kPa",     units: "kPa",   conf: "hi"  },
+];
+
+// Kinetic outputs (all low confidence; tau_rep & sigma carry bands)
+const KIN_OUT = [
+  { name: "Entanglements per chain",     sym: "Z = M_w/M_e", key: "Z",          units: "—",  conf: "low" },
+  { name: "τ_e shifted to T_nip",        sym: "τ_e(T_nip)",  keyTime: "tau_e_eff_s", conf: "low" },
+  { name: "Reptation time",              sym: "τ_rep",       keyTime: "tau_rep_c_s", keyTimeLo: "tau_rep_hi_s", keyTimeHi: "tau_rep_lo_s", conf: "low", banded: true },
+  { name: "Bond completeness at exit",   sym: "σ/σ_∞",       key: "sigma_c",    keyLo: "sigma_lo", keyHi: "sigma_hi", units: "—", conf: "low", banded: true, pct: true },
+  { name: "Stefan air evacuation time",  sym: "τ_evac",      keyTime: "tau_evac_s", conf: "low" },
+];
+
+const DIM_OUT = [
+  { name: "Shape factor (a/2h)",         sym: "S",        key: "S",           units: "—" },
+  { name: "Finite-layer correction",     sym: "E_eff/E*", key: "corr",        units: "×" },
+  { name: "Contact aspect a/R",          sym: "a/R",      key: "aOverR",      units: "—" },
+  { name: "Belt / peak pressure",        sym: "P_belt/p₀",key: "PbeltRatio",  units: "—" },
+  { name: "WLF shift factor (T_nip vs T_ref)", sym: "a_T", key: "aT",         units: "×" },
+  { name: "Dahlquist margin",            sym: "G'_th/G'", key: "Dq_margin",   units: "×",  banded: false },
+  { name: "Autohesion completeness",     sym: "τ/τ_rep",  key: "auto_ratio_c", keyLo: "auto_ratio_lo", keyHi: "auto_ratio_hi", units: "—", banded: true },
+  { name: "Air evacuation margin",       sym: "τ/τ_evac", key: "evac_margin", units: "×" },
+];
+
+// Regime labels for dimensionless outputs
+function regimeFor(key, val) {
+  if (key === "S") {
+    if (val < 0.3)  return { label: "thin-pad limit (half-space)",  cls: "" };
+    if (val < 1.0)  return { label: "transitional",                 cls: "" };
+    if (val < 3.0)  return { label: "moderately constrained",       cls: "warn" };
+    return { label: "strongly constrained — correction unreliable", cls: "flag" };
+  }
+  if (key === "aOverR") {
+    if (val > 0.3) return { label: "Hertz assumption strained",     cls: "flag" };
+    if (val > 0.15) return { label: "near Hertz validity edge",     cls: "warn" };
+    return { label: "Hertz OK",                                     cls: "" };
+  }
+  if (key === "PbeltRatio") {
+    if (val < 0.01) return { label: "negligible",                   cls: "" };
+    if (val < 0.05) return { label: "small",                        cls: "" };
+    if (val < 0.20) return { label: "non-trivial",                  cls: "warn" };
+    return { label: "comparable to nip",                            cls: "flag" };
+  }
+  if (key === "corr") {
+    if (val < 1.2)  return { label: "near half-space",              cls: "" };
+    if (val < 3)    return { label: "moderate stiffening",          cls: "" };
+    if (val < 10)   return { label: "strong stiffening",            cls: "warn" };
+    return { label: "extreme — model breakdown",                    cls: "flag" };
+  }
+  if (key === "aT") {
+    if (val < 0.01) return { label: "T_nip ≫ T_ref, dynamics far faster",   cls: "" };
+    if (val < 0.5)  return { label: "T_nip > T_ref, faster",                cls: "" };
+    if (val < 2)    return { label: "T_nip ≈ T_ref",                        cls: "" };
+    if (val < 100)  return { label: "T_nip < T_ref, slower",                cls: "warn" };
+    return { label: "T_nip ≪ T_ref — near WLF singularity",                 cls: "flag" };
+  }
+  if (key === "Dq_margin") {
+    if (val < 1)    return { label: "above Dahlquist — won't bond", cls: "flag" };
+    if (val < 3)    return { label: "marginal — patchy bonding",    cls: "warn" };
+    if (val < 10)   return { label: "workable",                     cls: "" };
+    return { label: "comfortable",                                  cls: "" };
+  }
+  if (key === "auto_ratio_c") {
+    if (val < 0.01) return { label: "almost all bonding post-nip",  cls: "flag" };
+    if (val < 0.1)  return { label: "partial in-nip, continues",    cls: "warn" };
+    if (val < 1)    return { label: "substantial in-nip",           cls: "" };
+    return { label: "completes in-nip",                             cls: "" };
+  }
+  if (key === "evac_margin") {
+    if (val < 1)    return { label: "trapped air likely",           cls: "flag" };
+    if (val < 10)   return { label: "marginal",                     cls: "warn" };
+    if (val < 100)  return { label: "comfortable",                  cls: "" };
+    return { label: "very comfortable",                             cls: "" };
+  }
+  return { label: "", cls: "" };
+}
+
+// ────────────────────────────────────────────────────────────
+// Change tracking
+// ────────────────────────────────────────────────────────────
+// Holds the last "checkpoint" outputs. On first render the checkpoint
+// is set silently so the user doesn't see highlights at page load.
+// The "clear highlights" button refreshes the checkpoint to current.
+let checkpoint = null;
+const REL_TOL = 0.001;  // 0.1% relative — below this we consider values unchanged
+
+function isChanged(curr, prev) {
+  if (prev === undefined || prev === null) return false;
+  if (!isFinite(curr) || !isFinite(prev)) return false;
+  if (curr === prev) return false;
+  const scale = Math.max(Math.abs(curr), Math.abs(prev));
+  if (scale === 0) return false;
+  return Math.abs(curr - prev) / scale > REL_TOL;
+}
+
+function deltaArrow(curr, prev) {
+  if (!isChanged(curr, prev)) return "";
+  return curr > prev
+    ? '<span class="delta">▲</span>'
+    : '<span class="delta down">▼</span>';
+}
+
+// ────────────────────────────────────────────────────────────
+// Render outputs
+// ────────────────────────────────────────────────────────────
+function renderAbs(out) {
+  const root = document.getElementById("g-abs");
+  root.innerHTML = "";
+  ABS_OUT.forEach((row, i) => {
+    const r = document.createElement("div");
+    r.className = "out-row" + (i === 4 || i === 9 ? " span" : "");
+    const curr = out[row.key];
+    const prev = checkpoint ? checkpoint[row.key] : undefined;
+    const changed = isChanged(curr, prev);
+    r.innerHTML = `
+      <div class="name${changed ? " changed" : ""}" data-explain="${row.key}"><span class="conf ${row.conf}"></span><span class="sym">${row.sym}</span> ${row.name}</div>
+      <div class="value${changed ? " changed" : ""}">${fmt(curr)}${deltaArrow(curr, prev)}</div>
+      <div class="units">${row.units}</div>
+    `;
+    root.appendChild(r);
+  });
+}
+
+function renderKin(out) {
+  const root = document.getElementById("g-kin");
+  root.innerHTML = "";
+  KIN_OUT.forEach(row => {
+    const r = document.createElement("div");
+    r.className = "out-row";
+    const explainKey = row.key || row.keyTime;
+    let valueHTML, unitsHTML;
+    let changed = false;
+
+    if (row.keyTime) {
+      // Time-valued output, auto-scaled
+      const c  = out[row.keyTime];
+      const lo = row.keyTimeLo !== undefined ? out[row.keyTimeLo] : null;
+      const hi = row.keyTimeHi !== undefined ? out[row.keyTimeHi] : null;
+      const pc  = checkpoint ? checkpoint[row.keyTime] : undefined;
+      const plo = (checkpoint && row.keyTimeLo) ? checkpoint[row.keyTimeLo] : undefined;
+      const phi = (checkpoint && row.keyTimeHi) ? checkpoint[row.keyTimeHi] : undefined;
+      changed = isChanged(c, pc) || isChanged(lo, plo) || isChanged(hi, phi);
+      valueHTML = fmtTime(c) + deltaArrow(c, pc) +
+                  (lo !== null ? `<span class="range">range: ${fmtTime(lo)} — ${fmtTime(hi)}</span>` : "");
+      unitsHTML = "";
+    } else if (row.banded) {
+      const c  = out[row.key];
+      const lo = out[row.keyLo];
+      const hi = out[row.keyHi];
+      const pc  = checkpoint ? checkpoint[row.key] : undefined;
+      const plo = checkpoint ? checkpoint[row.keyLo] : undefined;
+      const phi = checkpoint ? checkpoint[row.keyHi] : undefined;
+      changed = isChanged(c, pc) || isChanged(lo, plo) || isChanged(hi, phi);
+      const f = row.pct ? (v => (v * 100).toFixed(0) + "%") : (v => fmt(v));
+      valueHTML = f(c) + deltaArrow(c, pc) +
+                  `<span class="range">range: ${f(lo)} — ${f(hi)}</span>`;
+      unitsHTML = row.pct ? "" : (row.units || "");
+    } else {
+      const c = out[row.key];
+      const pc = checkpoint ? checkpoint[row.key] : undefined;
+      changed = isChanged(c, pc);
+      valueHTML = fmt(c) + deltaArrow(c, pc);
+      unitsHTML = row.units || "";
+    }
+
+    r.innerHTML = `
+      <div class="name${changed ? " changed" : ""}" data-explain="${explainKey}"><span class="conf ${row.conf}"></span><span class="sym">${row.sym}</span> ${row.name}</div>
+      <div class="value${changed ? " changed" : ""}">${valueHTML}</div>
+      <div class="units">${unitsHTML}</div>
+    `;
+    root.appendChild(r);
+  });
+}
+
+function renderDim(out) {
+  const root = document.getElementById("g-dim");
+  root.innerHTML = "";
+  DIM_OUT.forEach((row, i) => {
+    const c = out[row.key];
+    const reg = regimeFor(row.key, c);
+    const r = document.createElement("div");
+    r.className = "out-row" + (i === 4 ? " span" : "");  // separator before kinetic ratios
+    const pc = checkpoint ? checkpoint[row.key] : undefined;
+    let changed = isChanged(c, pc);
+    let valueHTML;
+    if (row.banded) {
+      const lo = out[row.keyLo];
+      const hi = out[row.keyHi];
+      const plo = checkpoint ? checkpoint[row.keyLo] : undefined;
+      const phi = checkpoint ? checkpoint[row.keyHi] : undefined;
+      changed = changed || isChanged(lo, plo) || isChanged(hi, phi);
+      valueHTML = fmt(c) + deltaArrow(c, pc) + `<span class="range">range: ${fmt(lo)} — ${fmt(hi)}</span>`;
+    } else {
+      valueHTML = fmt(c) + deltaArrow(c, pc);
+    }
+    r.innerHTML = `
+      <div class="name${changed ? " changed" : ""}" data-explain="${row.key}"><span class="sym">${row.sym}</span> ${row.name}<span class="regime ${reg.cls}">${reg.label ? "— " + reg.label : ""}</span></div>
+      <div class="value${changed ? " changed" : ""}">${valueHTML}</div>
+      <div class="units">${row.units}</div>
+    `;
+    root.appendChild(r);
+  });
+}
+
+// ────────────────────────────────────────────────────────────
+// Pressure profile plot (SVG)
+// ────────────────────────────────────────────────────────────
+function renderPlot(out, s) {
+  const svg = document.getElementById("plot");
+  const W = 720, H = 280;
+  const m = { l: 56, r: 24, t: 18, b: 44 };
+  const innerW = W - m.l - m.r;
+  const innerH = H - m.t - m.b;
+
+  // x range: ±1.3·a (a in mm), for headroom
+  const a = out.a_mm;
+  const xmax = 1.3 * a;
+  const ymax = out.p0_kPa * 1.1;
+
+  const xToPx = x => m.l + ((x + xmax) / (2 * xmax)) * innerW;
+  const yToPx = y => m.t + innerH - (y / ymax) * innerH;
+
+  // Build parabola path P(x) = p0·√(1-(x/a)²)
+  const pts = [];
+  const N = 80;
+  for (let i = 0; i <= N; i++) {
+    const x = -a + (2 * a * i) / N;
+    const y = out.p0_kPa * Math.sqrt(Math.max(0, 1 - (x / a) ** 2));
+    pts.push([x, y]);
+  }
+  const pathD = pts.map((p, i) => (i === 0 ? "M" : "L") + xToPx(p[0]).toFixed(2) + "," + yToPx(p[1]).toFixed(2)).join(" ");
+  const fillD = pathD + ` L ${xToPx(a).toFixed(2)},${yToPx(0).toFixed(2)} L ${xToPx(-a).toFixed(2)},${yToPx(0).toFixed(2)} Z`;
+
+  // 80% threshold band: |x| ≤ 0.6a
+  const x80 = 0.6 * a;
+  const y80 = 0.8 * out.p0_kPa;
+
+  // Ticks
+  const xTicks = [-a, -0.6 * a, 0, 0.6 * a, a].map(x => ({ x, label: x === 0 ? "0" : (x > 0 ? "+" : "") + x.toFixed(1) }));
+  const yTickStep = ymax > 600 ? 200 : (ymax > 200 ? 100 : 50);
+  const yTicks = [];
+  for (let y = 0; y <= ymax; y += yTickStep) yTicks.push(y);
+
+  let inner = "";
+
+  // axes / grid
+  inner += `<line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${m.t + innerH}" stroke="#1c1612" stroke-width="0.8"/>`;
+  inner += `<line x1="${m.l}" y1="${m.t + innerH}" x2="${W - m.r}" y2="${m.t + innerH}" stroke="#1c1612" stroke-width="0.8"/>`;
+
+  // y ticks
+  yTicks.forEach(y => {
+    const py = yToPx(y);
+    inner += `<line x1="${m.l - 4}" y1="${py}" x2="${m.l}" y2="${py}" stroke="#1c1612" stroke-width="0.8"/>`;
+    inner += `<line x1="${m.l}" y1="${py}" x2="${W - m.r}" y2="${py}" stroke="#c7b896" stroke-width="0.4" stroke-dasharray="2,3"/>`;
+    inner += `<text x="${m.l - 8}" y="${py + 3.5}" text-anchor="end" font-family="SF Mono, monospace" font-size="10" fill="#4a3f33">${y}</text>`;
+  });
+
+  // 80% guide line
+  const py80 = yToPx(y80);
+  inner += `<line x1="${m.l}" y1="${py80}" x2="${W - m.r}" y2="${py80}" stroke="#a07a14" stroke-width="0.5" stroke-dasharray="3,3"/>`;
+  inner += `<text x="${W - m.r - 4}" y="${py80 - 4}" text-anchor="end" font-family="SF Mono, monospace" font-size="10" fill="#a07a14">0.8 p₀</text>`;
+
+  // Parabola fill + line
+  inner += `<path d="${fillD}" fill="#a8421f" fill-opacity="0.08"/>`;
+  inner += `<path d="${pathD}" stroke="#a8421f" stroke-width="1.6" fill="none"/>`;
+
+  // 80% window vertical markers
+  [-x80, x80].forEach(x => {
+    const px = xToPx(x);
+    inner += `<line x1="${px}" y1="${yToPx(0)}" x2="${px}" y2="${yToPx(y80)}" stroke="#a07a14" stroke-width="0.7" stroke-dasharray="2,2"/>`;
+  });
+
+  // x ticks
+  xTicks.forEach(t => {
+    const px = xToPx(t.x);
+    inner += `<line x1="${px}" y1="${m.t + innerH}" x2="${px}" y2="${m.t + innerH + 4}" stroke="#1c1612" stroke-width="0.8"/>`;
+    inner += `<text x="${px}" y="${m.t + innerH + 16}" text-anchor="middle" font-family="SF Mono, monospace" font-size="10" fill="#4a3f33">${t.label}</text>`;
+  });
+
+  // axis labels
+  inner += `<text x="${m.l + innerW / 2}" y="${H - 8}" text-anchor="middle" font-family="Georgia, serif" font-size="12" font-style="italic" fill="#1c1612">position across footprint, x (mm)</text>`;
+  inner += `<text x="${14}" y="${m.t + innerH / 2}" text-anchor="middle" font-family="Georgia, serif" font-size="12" font-style="italic" fill="#1c1612" transform="rotate(-90 14 ${m.t + innerH / 2})">pressure (kPa)</text>`;
+
+  // Annotation: 80% window width
+  const annotY = m.t + 16;
+  inner += `<line x1="${xToPx(-x80)}" y1="${annotY}" x2="${xToPx(x80)}" y2="${annotY}" stroke="#a07a14" stroke-width="0.8"/>`;
+  inner += `<line x1="${xToPx(-x80)}" y1="${annotY - 4}" x2="${xToPx(-x80)}" y2="${annotY + 4}" stroke="#a07a14" stroke-width="0.8"/>`;
+  inner += `<line x1="${xToPx(x80)}" y1="${annotY - 4}" x2="${xToPx(x80)}" y2="${annotY + 4}" stroke="#a07a14" stroke-width="0.8"/>`;
+  inner += `<text x="${xToPx(0)}" y="${annotY - 6}" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#a07a14">τ_80 = ${fmt(out.tau80_ms)} ms (${(1.2 * a).toFixed(1)} mm)</text>`;
+
+  // p0 label
+  inner += `<circle cx="${xToPx(0)}" cy="${yToPx(out.p0_kPa)}" r="2.5" fill="#a8421f"/>`;
+  inner += `<text x="${xToPx(0) + 8}" y="${yToPx(out.p0_kPa) + 4}" font-family="SF Mono, monospace" font-size="11" fill="#a8421f">p₀ = ${fmt(out.p0_kPa)} kPa</text>`;
+
+  svg.innerHTML = inner;
+}
+
+// ────────────────────────────────────────────────────────────
+// Recompute & render
+// ────────────────────────────────────────────────────────────
+function recompute() {
+  const out = compute(state);
+  renderAbs(out);
+  renderKin(out);
+  renderDim(out);
+  renderPlot(out, state);
+}
+
+// ────────────────────────────────────────────────────────────
+// Boot
+// ────────────────────────────────────────────────────────────
+buildInputs();
+recompute();
+// Seed checkpoint with initial outputs so first render shows no highlights,
+// and subsequent recomputes can compare against the baseline.
+checkpoint = compute(state);
+
+function doClearHighlights() {
+  checkpoint = compute(state);
+  recompute();
+}
+document.getElementById("clear-hl-btn").addEventListener("click", doClearHighlights);
+document.getElementById("clear-hl-btn-top").addEventListener("click", doClearHighlights);
+
+// ────────────────────────────────────────────────────────────
+// Tooltip system: read explanations from prose section as
+// the single source of truth, show on hover of [data-explain].
+// ────────────────────────────────────────────────────────────
+const EXPLAIN = {};
+document.querySelectorAll('[data-explain-key]').forEach(el => {
+  EXPLAIN[el.dataset.explainKey] = el.innerHTML;
+});
+
+const tipEl = document.createElement("div");
+tipEl.id = "tip";
+tipEl.hidden = true;
+document.body.appendChild(tipEl);
+
+let tipTarget = null;
+
+function showTip(target) {
+  const key = target.dataset.explain;
+  const text = EXPLAIN[key];
+  if (!text) return;
+  tipEl.innerHTML = text;
+  tipEl.hidden = false;
+  positionTip(target);
+  // Force reflow so opacity transition fires
+  void tipEl.offsetWidth;
+  tipEl.classList.add("visible");
+  tipTarget = target;
+}
+
+function hideTip() {
+  tipEl.classList.remove("visible");
+  tipEl.hidden = true;
+  tipTarget = null;
+}
+
+function positionTip(target) {
+  const rect = target.getBoundingClientRect();
+  // First place off-screen to measure size
+  tipEl.style.left = "-9999px";
+  tipEl.style.top  = "-9999px";
+  const tipRect = tipEl.getBoundingClientRect();
+  const margin = 10;
+  const vpW = window.innerWidth;
+  const vpH = window.innerHeight;
+
+  // Prefer placing below the target, aligned to left edge
+  let top = rect.bottom + margin;
+  let left = rect.left;
+
+  // If overflow right, shift left
+  if (left + tipRect.width > vpW - 12) {
+    left = vpW - tipRect.width - 12;
+  }
+  if (left < 12) left = 12;
+
+  // If overflow bottom, flip above
+  if (top + tipRect.height > vpH - 12) {
+    const flippedTop = rect.top - tipRect.height - margin;
+    if (flippedTop >= 12) top = flippedTop;
+    // otherwise leave below and let it clip — better than weird placement
+  }
+
+  tipEl.style.left = (left + window.scrollX) + "px";
+  tipEl.style.top  = (top + window.scrollY) + "px";
+}
+
+document.body.addEventListener("mouseover", e => {
+  const t = e.target.closest("[data-explain]");
+  if (!t) return;
+  if (t === tipTarget) return;
+  showTip(t);
+});
+
+document.body.addEventListener("mouseout", e => {
+  if (!tipTarget) return;
+  const related = e.relatedTarget;
+  const goingTo = related && related.closest ? related.closest("[data-explain]") : null;
+  if (goingTo !== tipTarget) hideTip();
+});
+
+// Hide on scroll & resize to avoid stale positioning
+window.addEventListener("scroll", hideTip, true);
+window.addEventListener("resize", hideTip);
+</script>
+
+</body>
+</html>
